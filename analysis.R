@@ -162,6 +162,6 @@ p <- ggplot(d, aes(x50, y50, color = p, shape = response)) +
   theme(text = element_text(size=18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggsave(p, file = 'BrdPromoterRelProx50.pdf')
-
+ggsave(p, file = 'BrdPromoterRelProx25.pdf', units = 'in', height = 5, width = 10)
+ggsave(p, file = 'BrdPromoterRelProx50.pdf', units = 'in', height = 5, width = 10)
 
