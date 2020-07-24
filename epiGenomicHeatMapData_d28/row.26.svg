@@ -1,0 +1,863 @@
+<svg version="1.1"
+     baseProfile="full"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:ev="http://www.w3.org/2001/xml-events"
+     width="1011.78" height="789.55"
+     viewBox="0 0 1011.78 789.55"
+     font-family="Arial, Helvetica, sans-serif"
+     onload='Init(evt)'
+>
+<title>R SVG Plot</title>
+<desc>R SVG Plot with tooltips! (mode=1)</desc>
+<script type="text/ecmascript"><![CDATA[
+    var SVGDocument = null;
+    var SVGRoot = null;
+    var SVGViewBox = null;
+    var svgns = 'http://www.w3.org/2000/svg';
+    var xlinkns = 'http://www.w3.org/1999/xlink';
+    var map = null;
+    var toolTip = null;
+    var TrueCoords = null;
+    var tipBox = null;
+    var tipText = null;
+    var tipTitle = null;
+    var tipDesc1 = null;
+
+    var lastElement = null;
+    var titleText = '';
+    var titleDesc = '';
+
+
+    function Init(evt)
+    {
+       SVGDocument = evt.target.ownerDocument;
+       SVGRoot = SVGDocument.documentElement;
+       TrueCoords = SVGRoot.createSVGPoint();
+       map = document.getElementById('canvas')
+
+       toolTip = SVGDocument.getElementById('ToolTip');
+       tipBox = SVGDocument.getElementById('tipbox');
+       tipText = SVGDocument.getElementById('tipText');
+       tipText.setAttributeNS(null, 'font-family', 'Arial, sans-serif' );
+       tipTitle = SVGDocument.getElementById('tipTitle');
+       tipDesc1 = SVGDocument.getElementById('tipDesc1');
+       //window.status = (TrueCoords);
+
+       //create event for object
+       SVGRoot.addEventListener('mousemove', ShowTooltip, false);
+       SVGRoot.addEventListener('mouseout', HideTooltip, false);
+    };
+
+
+    function GetTrueCoords(evt)
+    {
+       // find the current zoom level and pan setting, and adjust the reported
+       //    mouse position accordingly
+       var newScale = SVGRoot.currentScale;
+       var translation = SVGRoot.currentTranslate;
+       TrueCoords.x = (evt.pageX - translation.x)/newScale;
+       TrueCoords.y = (evt.pageY - translation.y)/newScale;
+    };
+
+
+    function HideTooltip( evt )
+    {
+       toolTip.setAttributeNS(null, 'visibility', 'hidden');
+    };
+
+
+   function ShowTooltip( evt )
+   {
+      GetTrueCoords( evt );
+
+      var tipScale = 1/SVGRoot.currentScale;
+      var textWidth = 0;
+      var tspanWidth = 0;
+      var boxHeight = 20;
+
+      tipBox.setAttributeNS(null, 'transform', 'scale(' + tipScale + ',' + tipScale + ')' );
+      tipText.setAttributeNS(null, 'transform', 'scale(' + tipScale + ',' + tipScale + ')' );
+
+      var titleValue = '';
+      var desc1Value = '';
+      var targetElement = evt.target;
+      if ( lastElement != targetElement )
+      {
+         var targetTitle = targetElement.getElementsByTagName('tiptitle').item(0);
+         if ( targetTitle )
+         {
+            // if there is a 'tiptitle' element, use its contents for the tooltip tiptitle
+            titleValue = targetTitle.firstChild.nodeValue;
+         }
+
+         var targetDesc1 = targetElement.getElementsByTagName('desc1').item(0);
+         if ( targetDesc1 )
+         {
+            // if there is a 'desc1' element, use its contents for the tooltip desc1
+            desc1Value = targetDesc1.firstChild.nodeValue;
+
+            if ( '' == titleValue )
+            {
+               // if there is no 'tiptitle' element, use the contents of the 'desc1' element for the tooltip title instead
+               titleValue = desc1Value;
+               desc1Value = '';
+            }
+         } else {
+             // useful for debugging positioning...
+             // desc1Value = 'xPos=' + TrueCoords.x + ' yPos=' + TrueCoords.y;
+         }
+
+         // if there is still no 'tiptitle' element, use the contents of the 'id' attribute for the tooltip title
+         if ( '' == titleValue)
+         {
+             titleValue = targetElement.getAttributeNS(null, 'id');
+             if (titleValue = 'canvas')
+                 titleValue = ''
+         }
+
+         // selectively assign the tooltip title and desc the proper values,
+         //   and hide those which don't have text values
+         //
+         var titleDisplay = 'none';
+         if ( '' != titleValue )
+         {
+            tipTitle.firstChild.nodeValue = titleValue;
+            titleDisplay = 'inline';
+         }
+         tipTitle.setAttributeNS(null, 'display', titleDisplay );
+
+         var desc1Display = 'none';
+         if ( '' != desc1Value )
+         {
+            tipDesc1.firstChild.nodeValue = desc1Value;
+            desc1Display = 'inline';
+         }
+         tipDesc1.setAttributeNS(null, 'display', desc1Display );
+      }
+
+      // if there are tooltip contents to be displayed, adjust the size and position of the box
+      if ( '' != titleValue )
+      {
+         var xPos = TrueCoords.x;
+         var yPos = TrueCoords.y;
+         //return rectangle around text as SVGRect object
+         var outline = tipText.getBBox();
+         tipBox.setAttributeNS(null, 'width', Number(outline.width) + 10);
+         tipBox.setAttributeNS(null, 'height', Number(outline.height) + 10);
+
+         // work out which direction tooltip needs to hang in to be visible
+         var mapbb = map.getBBox();
+         if (xPos + (10 * tipScale) + Number(outline.width) < Number(mapbb.width))
+             xPos = xPos + 10 * tipScale;
+         else
+             xPos = xPos - 10 * tipScale - Number(outline.width);
+         if (yPos + (10 * tipScale) + Number(outline.height) < Number(mapbb.height))
+             yPos = yPos + 10 * tipScale;
+         else
+             yPos = yPos - 10 * tipScale - Number(outline.height);
+
+         // update position
+         toolTip.setAttributeNS(null, 'transform', 'translate(' + xPos + ',' + yPos + ')');
+         toolTip.setAttributeNS(null, 'visibility', 'visible');
+       }
+    };
+
+   ]]></script>
+<rect width="100%" height="100%" style="fill:#FFFFFF" id='canvas'/>
+<polygon points="209.58 , 673.92 209.58 , 660.87 316.54 , 660.87 316.54 , 673.92 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 660.87 209.58 , 647.82 316.54 , 647.82 316.54 , 660.87 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 647.82 209.58 , 634.77 316.54 , 634.77 316.54 , 647.82 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 634.77 209.58 , 621.72 316.54 , 621.72 316.54 , 634.77 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 621.72 209.58 , 608.67 316.54 , 608.67 316.54 , 621.72 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 608.67 209.58 , 595.63 316.54 , 595.63 316.54 , 608.67 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 595.63 209.58 , 582.58 316.54 , 582.58 316.54 , 595.63 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 582.58 209.58 , 569.53 316.54 , 569.53 316.54 , 582.58 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 569.53 209.58 , 556.48 316.54 , 556.48 316.54 , 569.53 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 556.48 209.58 , 543.43 316.54 , 543.43 316.54 , 556.48 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 543.43 209.58 , 530.38 316.54 , 530.38 316.54 , 543.43 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 530.38 209.58 , 517.33 316.54 , 517.33 316.54 , 530.38 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 517.33 209.58 , 504.28 316.54 , 504.28 316.54 , 517.33 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 504.28 209.58 , 491.24 316.54 , 491.24 316.54 , 504.28 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 491.24 209.58 , 478.19 316.54 , 478.19 316.54 , 491.24 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 478.19 209.58 , 465.14 316.54 , 465.14 316.54 , 478.19 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 465.14 209.58 , 452.09 316.54 , 452.09 316.54 , 465.14 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 452.09 209.58 , 439.04 316.54 , 439.04 316.54 , 452.09 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 439.04 209.58 , 425.99 316.54 , 425.99 316.54 , 439.04 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 425.99 209.58 , 412.94 316.54 , 412.94 316.54 , 425.99 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 412.94 209.58 , 399.89 316.54 , 399.89 316.54 , 412.94 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 399.89 209.58 , 386.85 316.54 , 386.85 316.54 , 399.89 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 386.85 209.58 , 373.80 316.54 , 373.80 316.54 , 386.85 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 373.80 209.58 , 360.75 316.54 , 360.75 316.54 , 373.80 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 360.75 209.58 , 347.70 316.54 , 347.70 316.54 , 360.75 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 347.70 209.58 , 334.65 316.54 , 334.65 316.54 , 347.70 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 334.65 209.58 , 321.60 316.54 , 321.60 316.54 , 334.65 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 321.60 209.58 , 308.55 316.54 , 308.55 316.54 , 321.60 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 308.55 209.58 , 295.50 316.54 , 295.50 316.54 , 308.55 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 295.50 209.58 , 282.46 316.54 , 282.46 316.54 , 295.50 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 282.46 209.58 , 269.41 316.54 , 269.41 316.54 , 282.46 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 269.41 209.58 , 256.36 316.54 , 256.36 316.54 , 269.41 " stroke-width="1px" stroke="#FFFFFF" fill="#B9BFE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 256.36 209.58 , 243.31 316.54 , 243.31 316.54 , 256.36 " stroke-width="1px" stroke="#FFFFFF" fill="#B9BFE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 243.31 209.58 , 230.26 316.54 , 230.26 316.54 , 243.31 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 230.26 209.58 , 217.21 316.54 , 217.21 316.54 , 230.26 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 217.21 209.58 , 204.16 316.54 , 204.16 316.54 , 217.21 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 204.16 209.58 , 191.11 316.54 , 191.11 316.54 , 204.16 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 191.11 209.58 , 178.07 316.54 , 178.07 316.54 , 191.11 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 178.07 209.58 , 165.02 316.54 , 165.02 316.54 , 178.07 " stroke-width="1px" stroke="#FFFFFF" fill="#B9BFE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 165.02 209.58 , 151.97 316.54 , 151.97 316.54 , 165.02 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 151.97 209.58 , 138.92 316.54 , 138.92 316.54 , 151.97 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 138.92 209.58 , 125.87 316.54 , 125.87 316.54 , 138.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 125.87 209.58 , 112.82 316.54 , 112.82 316.54 , 125.87 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 112.82 209.58 , 99.77 316.54 , 99.77 316.54 , 112.82 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="209.58 , 99.77 209.58 , 86.72 316.54 , 86.72 316.54 , 99.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="316.54 , 673.92 316.54 , 660.87 423.50 , 660.87 423.50 , 673.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="647.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="634.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="621.72" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="608.67" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="595.63" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="582.58" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="569.53" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="556.48" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="543.43" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="530.38" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="517.33" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="504.28" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="491.24" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="478.19" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="465.14" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="452.09" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="439.04" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="425.99" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="412.94" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="399.89" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="386.85" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="373.80" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="360.75" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="347.70" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="334.65" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="321.60" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="308.55" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="295.50" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="282.46" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="269.41" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="256.36" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#ABB4E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="243.31" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#B9BFE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="230.26" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="217.21" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="204.16" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="191.11" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="178.07" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="165.02" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="151.97" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="138.92" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="125.87" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="112.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="316.54" y="99.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="316.54 , 99.77 316.54 , 86.72 423.50 , 86.72 423.50 , 99.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="423.50 , 673.92 423.50 , 660.87 530.46 , 660.87 530.46 , 673.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="647.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="634.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="621.72" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="608.67" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="595.63" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="582.58" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="569.53" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="556.48" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="543.43" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="530.38" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="517.33" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="504.28" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="491.24" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="478.19" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="465.14" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="452.09" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="439.04" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="425.99" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="412.94" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="399.89" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="386.85" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="373.80" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="360.75" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="347.70" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="334.65" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="321.60" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="308.55" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="295.50" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="282.46" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="269.41" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="256.36" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="243.31" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="230.26" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="217.21" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="204.16" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="191.11" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="178.07" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="165.02" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="151.97" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="138.92" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="125.87" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="112.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="423.50" y="99.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="423.50 , 99.77 423.50 , 86.72 530.46 , 86.72 530.46 , 99.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="530.46 , 673.92 530.46 , 660.87 637.42 , 660.87 637.42 , 673.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="647.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="634.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="621.72" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="608.67" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="595.63" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="582.58" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="569.53" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="556.48" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="543.43" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="530.38" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="517.33" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="504.28" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="491.24" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="478.19" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="465.14" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="452.09" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="439.04" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="425.99" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="412.94" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="399.89" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="386.85" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="373.80" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="360.75" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="347.70" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="334.65" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="321.60" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="308.55" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="295.50" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="282.46" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="269.41" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="256.36" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="243.31" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="230.26" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="217.21" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="204.16" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="191.11" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="178.07" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="165.02" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="151.97" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="138.92" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="125.87" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="112.82" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<rect x="530.46" y="99.77" width="106.96" height="13.05" stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="530.46 , 99.77 530.46 , 86.72 637.42 , 86.72 637.42 , 99.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 673.92 637.42 , 660.87 744.38 , 660.87 744.38 , 673.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 660.87 637.42 , 647.82 744.38 , 647.82 744.38 , 660.87 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 647.82 637.42 , 634.77 744.38 , 634.77 744.38 , 647.82 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 634.77 637.42 , 621.72 744.38 , 621.72 744.38 , 634.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 621.72 637.42 , 608.67 744.38 , 608.67 744.38 , 621.72 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 608.67 637.42 , 595.63 744.38 , 595.63 744.38 , 608.67 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 595.63 637.42 , 582.58 744.38 , 582.58 744.38 , 595.63 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 582.58 637.42 , 569.53 744.38 , 569.53 744.38 , 582.58 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 569.53 637.42 , 556.48 744.38 , 556.48 744.38 , 569.53 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 556.48 637.42 , 543.43 744.38 , 543.43 744.38 , 556.48 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 543.43 637.42 , 530.38 744.38 , 530.38 744.38 , 543.43 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 530.38 637.42 , 517.33 744.38 , 517.33 744.38 , 530.38 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 517.33 637.42 , 504.28 744.38 , 504.28 744.38 , 517.33 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 504.28 637.42 , 491.24 744.38 , 491.24 744.38 , 504.28 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 491.24 637.42 , 478.19 744.38 , 478.19 744.38 , 491.24 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 478.19 637.42 , 465.14 744.38 , 465.14 744.38 , 478.19 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 465.14 637.42 , 452.09 744.38 , 452.09 744.38 , 465.14 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 452.09 637.42 , 439.04 744.38 , 439.04 744.38 , 452.09 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 439.04 637.42 , 425.99 744.38 , 425.99 744.38 , 439.04 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 425.99 637.42 , 412.94 744.38 , 412.94 744.38 , 425.99 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 412.94 637.42 , 399.89 744.38 , 399.89 744.38 , 412.94 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 399.89 637.42 , 386.85 744.38 , 386.85 744.38 , 399.89 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 386.85 637.42 , 373.80 744.38 , 373.80 744.38 , 386.85 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 373.80 637.42 , 360.75 744.38 , 360.75 744.38 , 373.80 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 360.75 637.42 , 347.70 744.38 , 347.70 744.38 , 360.75 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 347.70 637.42 , 334.65 744.38 , 334.65 744.38 , 347.70 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 334.65 637.42 , 321.60 744.38 , 321.60 744.38 , 334.65 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 321.60 637.42 , 308.55 744.38 , 308.55 744.38 , 321.60 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 308.55 637.42 , 295.50 744.38 , 295.50 744.38 , 308.55 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 295.50 637.42 , 282.46 744.38 , 282.46 744.38 , 295.50 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 282.46 637.42 , 269.41 744.38 , 269.41 744.38 , 282.46 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 269.41 637.42 , 256.36 744.38 , 256.36 744.38 , 269.41 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 256.36 637.42 , 243.31 744.38 , 243.31 744.38 , 256.36 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 243.31 637.42 , 230.26 744.38 , 230.26 744.38 , 243.31 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 230.26 637.42 , 217.21 744.38 , 217.21 744.38 , 230.26 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 217.21 637.42 , 204.16 744.38 , 204.16 744.38 , 217.21 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 204.16 637.42 , 191.11 744.38 , 191.11 744.38 , 204.16 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 191.11 637.42 , 178.07 744.38 , 178.07 744.38 , 191.11 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 178.07 637.42 , 165.02 744.38 , 165.02 744.38 , 178.07 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 165.02 637.42 , 151.97 744.38 , 151.97 744.38 , 165.02 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 151.97 637.42 , 138.92 744.38 , 138.92 744.38 , 151.97 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 138.92 637.42 , 125.87 744.38 , 125.87 744.38 , 138.92 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 125.87 637.42 , 112.82 744.38 , 112.82 744.38 , 125.87 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 112.82 637.42 , 99.77 744.38 , 99.77 744.38 , 112.82 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="637.42 , 99.77 637.42 , 86.72 744.38 , 86.72 744.38 , 99.77 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<text transform="translate(417.91,43.39) " fill="#000000"  style="font-size:12pt" >Rows&#160;Compared</text>
+<polyline points="209.58 , 673.92 744.38 , 673.92 744.38 , 86.72 209.58 , 86.72 209.58 , 673.92 " stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<a xlink:href="row.1.svg"
+>
+<text transform="translate(71.41,672.81) " fill="#000000"  style="font-size:10pt" >Brd2_promoters.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>Brd2_promoters.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.2.svg"
+>
+<text transform="translate(71.41,659.76) " fill="#000000"  style="font-size:10pt" >Brd3_promoters.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>Brd3_promoters.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.3.svg"
+>
+<text transform="translate(71.41,646.71) " fill="#000000"  style="font-size:10pt" >Brd4_promoters.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>Brd4_promoters.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.4.svg"
+>
+<text transform="translate(128.86,633.66) " fill="#000000"  style="font-size:10pt" >CTCF.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>CTCF.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.5.svg"
+>
+<text transform="translate(108.53,620.62) " fill="#000000"  style="font-size:10pt" >H2AK5ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2AK5ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.6.svg"
+>
+<text transform="translate(108.53,607.57) " fill="#000000"  style="font-size:10pt" >H2AK9ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2AK9ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.7.svg"
+>
+<text transform="translate(130.71,594.52) " fill="#000000"  style="font-size:10pt" >H2AZ.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2AZ.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.8.svg"
+>
+<text transform="translate(94.42,581.47) " fill="#000000"  style="font-size:10pt" >H2BK120ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2BK120ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.9.svg"
+>
+<text transform="translate(101.48,568.42) " fill="#000000"  style="font-size:10pt" >H2BK12ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2BK12ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.10.svg"
+>
+<text transform="translate(101.48,555.37) " fill="#000000"  style="font-size:10pt" >H2BK20ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2BK20ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.11.svg"
+>
+<text transform="translate(108.53,542.32) " fill="#000000"  style="font-size:10pt" >H2BK5ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2BK5ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.12.svg"
+>
+<text transform="translate(97.61,529.27) " fill="#000000"  style="font-size:10pt" >H2BK5me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H2BK5me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.13.svg"
+>
+<text transform="translate(110.38,516.23) " fill="#000000"  style="font-size:10pt" >H3K14ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K14ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.14.svg"
+>
+<text transform="translate(110.38,503.18) " fill="#000000"  style="font-size:10pt" >H3K18ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K18ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.15.svg"
+>
+<text transform="translate(110.38,490.13) " fill="#000000"  style="font-size:10pt" >H3K23ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K23ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.16.svg"
+>
+<text transform="translate(110.38,477.08) " fill="#000000"  style="font-size:10pt" >H3K27ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K27ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.17.svg"
+>
+<text transform="translate(99.46,464.03) " fill="#000000"  style="font-size:10pt" >H3K27me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K27me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.18.svg"
+>
+<text transform="translate(99.46,450.98) " fill="#000000"  style="font-size:10pt" >H3K27me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K27me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.19.svg"
+>
+<text transform="translate(99.46,437.93) " fill="#000000"  style="font-size:10pt" >H3K27me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K27me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.20.svg"
+>
+<text transform="translate(110.38,424.88) " fill="#000000"  style="font-size:10pt" >H3K36ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K36ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.21.svg"
+>
+<text transform="translate(99.46,411.84) " fill="#000000"  style="font-size:10pt" >H3K36me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K36me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.22.svg"
+>
+<text transform="translate(99.46,398.79) " fill="#000000"  style="font-size:10pt" >H3K36me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K36me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.23.svg"
+>
+<text transform="translate(117.44,385.74) " fill="#000000"  style="font-size:10pt" >H3K4ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K4ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.24.svg"
+>
+<text transform="translate(106.52,372.69) " fill="#000000"  style="font-size:10pt" >H3K4me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K4me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.25.svg"
+>
+<text transform="translate(106.52,359.64) " fill="#000000"  style="font-size:10pt" >H3K4me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K4me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.26.svg"
+>
+<text transform="translate(106.52,346.59) " fill="#000000"  style="font-size:10pt" >H3K4me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K4me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.27.svg"
+>
+<text transform="translate(99.46,333.54) " fill="#000000"  style="font-size:10pt" >H3K79me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K79me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.28.svg"
+>
+<text transform="translate(99.46,320.49) " fill="#000000"  style="font-size:10pt" >H3K79me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K79me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.29.svg"
+>
+<text transform="translate(99.46,307.45) " fill="#000000"  style="font-size:10pt" >H3K79me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K79me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.30.svg"
+>
+<text transform="translate(117.44,294.40) " fill="#000000"  style="font-size:10pt" >H3K9ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K9ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.31.svg"
+>
+<text transform="translate(106.52,281.35) " fill="#000000"  style="font-size:10pt" >H3K9me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K9me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.32.svg"
+>
+<text transform="translate(106.52,268.30) " fill="#000000"  style="font-size:10pt" >H3K9me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K9me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.33.svg"
+>
+<text transform="translate(106.52,255.25) " fill="#000000"  style="font-size:10pt" >H3K9me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3K9me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.34.svg"
+>
+<text transform="translate(105.51,242.20) " fill="#000000"  style="font-size:10pt" >H3R2me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3R2me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.35.svg"
+>
+<text transform="translate(105.51,229.15) " fill="#000000"  style="font-size:10pt" >H3R2me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H3R2me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.36.svg"
+>
+<text transform="translate(110.38,216.10) " fill="#000000"  style="font-size:10pt" >H4K12ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K12ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.37.svg"
+>
+<text transform="translate(110.38,203.06) " fill="#000000"  style="font-size:10pt" >H4K16ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K16ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.38.svg"
+>
+<text transform="translate(99.46,190.01) " fill="#000000"  style="font-size:10pt" >H4K20me1.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K20me1.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.39.svg"
+>
+<text transform="translate(99.46,176.96) " fill="#000000"  style="font-size:10pt" >H4K20me3.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K20me3.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.40.svg"
+>
+<text transform="translate(117.44,163.91) " fill="#000000"  style="font-size:10pt" >H4K5ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K5ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.41.svg"
+>
+<text transform="translate(117.44,150.86) " fill="#000000"  style="font-size:10pt" >H4K8ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K8ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.42.svg"
+>
+<text transform="translate(110.38,137.81) " fill="#000000"  style="font-size:10pt" >H4K91ac.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4K91ac.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.43.svg"
+>
+<text transform="translate(105.51,124.76) " fill="#000000"  style="font-size:10pt" >H4R3me2.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>H4R3me2.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.44.svg"
+>
+<text transform="translate(127.85,111.71) " fill="#000000"  style="font-size:10pt" >NRSF.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>NRSF.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="row.45.svg"
+>
+<text transform="translate(137.09,98.67) " fill="#000000"  style="font-size:10pt" >PolII.10Kb<tiptitle>Compare rows to:</tiptitle>
+<desc1>PolII.10Kb</desc1>
+</text>
+</a>
+<a xlink:href="col.1.svg"
+>
+<text transform="translate(220.05,75.89) " fill="#000000"  style="font-size:10pt" >d28&#160;p03712-11<tiptitle>Compare columns to:</tiptitle>
+<desc1>d28 p03712-11</desc1>
+</text>
+</a>
+<a xlink:href="col.2.svg"
+>
+<text transform="translate(327.01,75.89) " fill="#000000"  style="font-size:10pt" >d28&#160;p03712-40<tiptitle>Compare columns to:</tiptitle>
+<desc1>d28 p03712-40</desc1>
+</text>
+</a>
+<a xlink:href="col.3.svg"
+>
+<text transform="translate(433.97,75.89) " fill="#000000"  style="font-size:10pt" >d28&#160;p04409-17<tiptitle>Compare columns to:</tiptitle>
+<desc1>d28 p04409-17</desc1>
+</text>
+</a>
+<a xlink:href="col.4.svg"
+>
+<text transform="translate(543.12,75.89) " fill="#000000"  style="font-size:10pt" >d28&#160;Complete<tiptitle>Compare columns to:</tiptitle>
+<desc1>d28 Complete</desc1>
+</text>
+</a>
+<a xlink:href="col.5.svg"
+>
+<text transform="translate(662.68,75.89) " fill="#000000"  style="font-size:10pt" >d28&#160;None<tiptitle>Compare columns to:</tiptitle>
+<desc1>d28 None</desc1>
+</text>
+</a>
+<a xlink:href="main.svg"
+>
+<text transform="translate(766.05,104.11) " fill="#0000FF"  style="font-size:8pt" >&lt;Show&#160;Plain&#160;Heatmap&gt;<tiptitle>Click to:</tiptitle>
+<desc1>Clear Annotations</desc1>
+</text>
+</a>
+<a xlink:href="H50.svg"
+>
+<text transform="translate(766.05,130.20) " fill="#0000FF"  style="font-size:8pt" >&lt;Compare&#160;to&#160;Area&#160;==&#160;0.50&gt;<tiptitle>Test Each Area</tiptitle>
+<desc1>vs Chance Discrimination</desc1>
+</text>
+</a>
+<text transform="translate(260.54,555.37) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(260.54,542.32) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(260.54,529.27) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(258.02,477.08) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(260.54,398.79) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(260.54,385.74) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(260.54,372.69) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(258.02,359.64) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(261.55,346.59) " fill="#000000"  style="font-size:10pt" >|</text>
+<text transform="translate(258.02,281.35) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(258.02,190.01) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(260.54,150.86) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(255.50,137.81) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,620.62) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(367.50,594.52) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(362.46,581.47) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,568.42) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,555.37) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,542.32) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,529.27) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,503.18) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,490.13) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,477.08) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,464.03) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,450.98) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,437.93) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,424.88) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,398.79) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,385.74) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,372.69) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,359.64) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(368.51,346.59) " fill="#000000"  style="font-size:10pt" >|</text>
+<text transform="translate(364.98,320.49) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(364.98,307.45) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(367.50,294.40) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(362.46,281.35) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,268.30) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,255.25) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(367.50,242.20) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(362.46,216.10) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,203.06) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,190.01) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,176.96) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,163.91) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,150.86) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(362.46,137.81) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(367.50,124.76) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(362.46,98.67) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(475.47,346.59) " fill="#000000"  style="font-size:10pt" >|</text>
+<text transform="translate(576.38,672.81) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,659.76) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,646.71) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,633.66) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,620.62) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,594.52) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,581.47) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,568.42) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,555.37) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,542.32) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,529.27) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,503.18) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,490.13) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,477.08) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,464.03) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,450.98) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,437.93) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,424.88) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,411.84) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,398.79) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,385.74) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,372.69) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,359.64) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(582.43,346.59) " fill="#000000"  style="font-size:10pt" >|</text>
+<text transform="translate(576.38,320.49) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,307.45) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,294.40) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,281.35) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,268.30) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,255.25) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,242.20) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,216.10) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,203.06) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,190.01) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,176.96) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,163.91) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,150.86) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,137.81) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,124.76) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,111.71) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(576.38,98.67) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(683.34,620.62) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(688.38,607.57) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(683.34,581.47) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(685.86,568.42) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(683.34,555.37) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(685.86,542.32) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(685.86,529.27) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(683.34,503.18) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(685.86,477.08) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(685.86,464.03) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(685.86,424.88) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(683.34,398.79) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(685.86,385.74) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(683.34,372.69) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(683.34,359.64) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(689.39,346.59) " fill="#000000"  style="font-size:10pt" >|</text>
+<text transform="translate(683.34,281.35) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(683.34,216.10) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(688.38,203.06) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(683.34,190.01) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(683.34,163.91) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(683.34,150.86) " fill="#000000"  style="font-size:10pt" >***</text>
+<text transform="translate(685.86,137.81) " fill="#000000"  style="font-size:10pt" >**</text>
+<text transform="translate(688.38,98.67) " fill="#000000"  style="font-size:10pt" >*</text>
+<text transform="translate(453.60,730.65) " fill="#000000"  style="font-size:8pt" >Color&#160;Key</text>
+<polygon points="209.58 , 742.57 209.58 , 735.35 235.05 , 735.35 235.05 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#4A6FE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="235.05 , 742.57 235.05 , 735.35 260.52 , 735.35 260.52 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#5F7BE1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="260.52 , 742.57 260.52 , 735.35 285.98 , 735.35 285.98 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#7086E1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="285.98 , 742.57 285.98 , 735.35 311.45 , 735.35 311.45 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#8091E1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="311.45 , 742.57 311.45 , 735.35 336.92 , 735.35 336.92 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#8F9DE1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="336.92 , 742.57 336.92 , 735.35 362.38 , 735.35 362.38 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#9DA8E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="362.38 , 742.57 362.38 , 735.35 387.85 , 735.35 387.85 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#ABB4E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="387.85 , 742.57 387.85 , 735.35 413.32 , 735.35 413.32 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#B9BFE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="413.32 , 742.57 413.32 , 735.35 438.78 , 735.35 438.78 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#C7CBE3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="438.78 , 742.57 438.78 , 735.35 464.25 , 735.35 464.25 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#D5D7E3" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="464.25 , 742.57 464.25 , 735.35 489.72 , 735.35 489.72 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E2E2E2" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="489.72 , 742.57 489.72 , 735.35 515.18 , 735.35 515.18 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E4D3D6" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="515.18 , 742.57 515.18 , 735.35 540.65 , 735.35 540.65 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E6C4C9" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="540.65 , 742.57 540.65 , 735.35 566.12 , 735.35 566.12 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E6B4BD" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="566.12 , 742.57 566.12 , 735.35 591.58 , 735.35 591.58 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E5A5B1" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="591.58 , 742.57 591.58 , 735.35 617.05 , 735.35 617.05 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E495A5" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="617.05 , 742.57 617.05 , 735.35 642.51 , 735.35 642.51 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#E28699" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="642.51 , 742.57 642.51 , 735.35 667.98 , 735.35 667.98 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#DF758D" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="667.98 , 742.57 667.98 , 735.35 693.45 , 735.35 693.45 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#DB6581" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="693.45 , 742.57 693.45 , 735.35 718.91 , 735.35 718.91 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#D75376" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<polygon points="718.91 , 742.57 718.91 , 735.35 744.38 , 735.35 744.38 , 742.57 " stroke-width="1px" stroke="#FFFFFF" fill="#D33F6A" stroke-opacity="0.000000" fill-opacity="1.000000" />
+<line x1="222.32" y1="742.57" x2="731.65" y2="742.57" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="222.32" y1="742.57" x2="222.32" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="324.18" y1="742.57" x2="324.18" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="426.05" y1="742.57" x2="426.05" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="527.92" y1="742.57" x2="527.92" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="629.78" y1="742.57" x2="629.78" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<line x1="731.65" y1="742.57" x2="731.65" y2="747.99" stroke-width="1px" stroke="#000000" fill="#000000" stroke-opacity="1.000000" fill-opacity="0.000000"/>
+<text transform="translate(213.16,764.24) " fill="#000000"  style="font-size:10pt" >0.0</text>
+<text transform="translate(315.03,764.24) " fill="#000000"  style="font-size:10pt" >0.2</text>
+<text transform="translate(416.89,764.24) " fill="#000000"  style="font-size:10pt" >0.4</text>
+<text transform="translate(518.76,764.24) " fill="#000000"  style="font-size:10pt" >0.6</text>
+<text transform="translate(620.63,764.24) " fill="#000000"  style="font-size:10pt" >0.8</text>
+<text transform="translate(722.49,764.24) " fill="#000000"  style="font-size:10pt" >1.0</text>
+<g id='ToolTip' opacity='1' visibility='hidden' pointer-events='none'>
+   <rect id='tipbox' x='0' y='5' width='88' height='20' rx='2' ry='2' fill='white' stroke='black'/>
+   <text id='tipText' x='5' y='20' font-family='Arial' font-size='10pt' fill='blue'>
+      <tspan id='tipTitle' x='5' font-weight='bold' fill='black'><![CDATA[]]></tspan>
+      <tspan id='tipDesc1' x='5' dy='13'><![CDATA[]]></tspan>
+   </text>
+</g>
+</svg>
